@@ -48,5 +48,5 @@ infernus_theme_parse_git_dirty() {
 
 local ret_status="%(?:%{$fg_bold[green]%}$PRSEP :%{$fg_bold[red]%}$PRSEP %s)"
 
-PROMPT='%{$fg[yellow]%}$(git_prompt_info)%{$fg[blue]%} %c $ret_status %{$reset_color%}'
+PROMPT='%{$fg[yellow]%}$(infernus_theme_git_prompt_info)%{$fg[blue]%} %c $ret_status %{$reset_color%}'
 RPROMPT='%{$fg[yellow]%}%n%{$reset_color%}@%{$fg[blue]%}%m%{$reset_color%}'
