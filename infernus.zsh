@@ -1,52 +1,40 @@
-if [[ $UID -eq 0 ]]; then
-    PRSEP="☠"
-else
-    PRSEP="∞"
-fi
+INFERNUS_THEME_GIT_PROMPT_PREFIX="%{$fg[yellow]%}"
+INFERNUS_THEME_GIT_PROMPT_SUFFIX="%{$fg[green]%} →%{$reset_color%}"
+INFERNUS_THEME_GIT_PROMPT_DIRTY="%{$fg[red]%}✗%{$reset_color%}"
+INFERNUS_THEME_GIT_PROMPT_CLEAN="%{$fg[yellow]%}"
 
-ZSH_THEME_GIT_PROMPT_PREFIX="%{$fg[yellow]%}"
-ZSH_THEME_GIT_PROMPT_SUFFIX="%{$fg[green]%} →%{$reset_color%}"
-ZSH_THEME_GIT_PROMPT_DIRTY="%{$fg[red]%}✗%{$reset_color%}"
-ZSH_THEME_GIT_PROMPT_CLEAN="%{$fg[yellow]%}"
-
-# all credit to https://github.com/ohmyzsh/ohmyzsh/blob/master/lib/git.zsh
 infernus_theme_git_prompt_info() {
-    local ref
-    if [[ "$(command git config --get oh-my-zsh.hide-status 2>/dev/null)" != "1" ]]; then
-        ref=$(command git symbolic-ref HEAD 2> /dev/null) || \
-        ref=$(command git rev-parse --short HEAD 2> /dev/null) || return 0
-        echo "$ZSH_THEME_GIT_PROMPT_PREFIX${ref#refs/heads/}$(infernus_theme_parse_git_dirty)$ZSH_THEME_GIT_PROMPT_SUFFIX"
+    local VCS_REF
+    VCS_REF="$vcs_info_msg_0_"
+    if [[ -n "$VCS_REF" ]]; then
+        if [[ "${VCS_REF/.../}" == "$VCS_REF" ]]; then
+            VCS_REF="$BRANCH $VCS_REF"
+        else
+            VCS_REF="$DETACHED ${VCS_REF/.../}"
+        fi
+
+        print -n "$INFERNUS_THEME_GIT_PROMPT_PREFIX$VCS_REF$(infernus_theme_parse_git_dirty)$INFERNUS_THEME_GIT_PROMPT_SUFFIX"
     fi
 }
 
 infernus_theme_parse_git_dirty() {
-    local STATUS
-    local -a FLAGS
-    FLAGS=('--porcelain')
-    if [[ "$(command git config --get oh-my-zsh.hide-dirty)" != "1" ]]; then
-        if [[ "$DISABLE_UNTRACKED_FILES_DIRTY" == "true" ]]; then
-            FLAGS+='--untracked-files=no'
-        fi
-        case "$GIT_STATUS_IGNORE_SUBMODULES" in
-        git)
-            # let git decide (this respects per-repo config in .gitmodules)
-            ;;
-        *)
-            # if unset: ignore dirty submodules
-            # other values are passed to --ignore-submodules
-            FLAGS+="--ignore-submodules=${GIT_STATUS_IGNORE_SUBMODULES:-dirty}"
-            ;;
-        esac
-        STATUS=$(command git status ${FLAGS} 2> /dev/null | tail -n1)
-    fi
-    if [[ -n $STATUS ]]; then
-        echo "$ZSH_THEME_GIT_PROMPT_DIRTY"
+    is_dirty() {
+        test -n "$(git status --porcelain --ignore-submodules)"
+    }
+
+    if is_dirty; then
+        print -n "$INFERNUS_THEME_GIT_PROMPT_DIRTY"
     else
-        echo "$ZSH_THEME_GIT_PROMPT_CLEAN"
+        print -n "$INFERNUS_THEME_GIT_PROMPT_CLEAN"
     fi
 }
 
 infernus_theme_separator() {
+    local PRSEP="∞"
+    if [[ $UID -eq 0 ]]; then
+        PRSEP="☠"
+    fi
+
     if [[ $RETVAL -ne 0 ]]; then
         print -n "%{$fg_bold[red]%}$PRSEP"
     else
@@ -56,14 +44,23 @@ infernus_theme_separator() {
 
 infernus_theme_precmd() {
     RETVAL=$?
+    vcs_info
     PROMPT='%{$fg[yellow]%}$(infernus_theme_git_prompt_info)%{$fg[blue]%} %c $(infernus_theme_separator) %{$reset_color%}'
     RPROMPT='%{$fg[yellow]%}%n%{$reset_color%}@%{$fg[blue]%}%m%{$reset_color%}'
 }
 
 infernus_theme_setup() {
     autoload -Uz add-zsh-hook
+    autoload -Uz vcs_info
+
+    prompt_opts=(cr subst percent)
 
     add-zsh-hook precmd infernus_theme_precmd
+
+    zstyle ':vcs_info:*' enable git
+    zstyle ':vcs_info:*' check-for-changes false
+    zstyle ':vcs_info:git*' formats '%b'
+    zstyle ':vcs_info:git*' actionformats '%b (%a)'
 }
 
 infernus_theme_setup "$@"
