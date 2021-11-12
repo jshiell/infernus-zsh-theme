@@ -46,7 +46,24 @@ infernus_theme_parse_git_dirty() {
     fi
 }
 
-local ret_status="%(?:%{$fg_bold[green]%}$PRSEP :%{$fg_bold[red]%}$PRSEP %s)"
+infernus_theme_separator() {
+    if [[ $RETVAL -ne 0 ]]; then
+        print -n "%{$fg_bold[red]%}$PRSEP"
+    else
+        print -n "%{$fg_bold[green]%}$PRSEP"
+    fi
+}
 
-PROMPT='%{$fg[yellow]%}$(infernus_theme_git_prompt_info)%{$fg[blue]%} %c $ret_status %{$reset_color%}'
-RPROMPT='%{$fg[yellow]%}%n%{$reset_color%}@%{$fg[blue]%}%m%{$reset_color%}'
+infernus_theme_precmd() {
+    RETVAL=$?
+    PROMPT='%{$fg[yellow]%}$(infernus_theme_git_prompt_info)%{$fg[blue]%} %c $(infernus_theme_separator) %{$reset_color%}'
+    RPROMPT='%{$fg[yellow]%}%n%{$reset_color%}@%{$fg[blue]%}%m%{$reset_color%}'
+}
+
+infernus_theme_setup() {
+    autoload -Uz add-zsh-hook
+
+    add-zsh-hook precmd infernus_theme_precmd
+}
+
+infernus_theme_setup "$@"
