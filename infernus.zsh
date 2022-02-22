@@ -63,6 +63,4 @@ infernus_theme_setup() {
     zstyle ':vcs_info:git*' actionformats '%b (%a)'
 }
 
-if [[ $TERM_PROGRAM != "WarpTerminal" ]]; then
-    infernus_theme_setup "$@"
-fi
+infernus_theme_setup "$@"
